@@ -9,6 +9,26 @@ export default {
 		"./src/**/*.{ts,tsx}",
 	],
 	prefix: "",
+	plugins: [require("tailwindcss-animate"), require("daisyui")],
+	daisyui: {
+		themes: [
+			{
+				interior: {
+					"primary": "#7C6F47",
+					"secondary": "#A8956B", 
+					"accent": "#D4B47A",
+					"neutral": "#2A2A2A",
+					"base-100": "#FDFCF8",
+					"base-200": "#F7F5F0",
+					"base-300": "#E8E4DC",
+					"info": "#3B82F6",
+					"success": "#10B981",
+					"warning": "#F59E0B",
+					"error": "#EF4444",
+				},
+			},
+		],
+	},
 	theme: {
 		container: {
 			center: true,
@@ -84,13 +104,22 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': { opacity: '0', transform: 'translateY(20px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
+				},
+				'scale-in': {
+					'0%': { transform: 'scale(0.9)', opacity: '0' },
+					'100%': { transform: 'scale(1)', opacity: '1' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.6s ease-out',
+				'scale-in': 'scale-in 0.4s ease-out'
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
 } satisfies Config;
