@@ -24,7 +24,7 @@ const Index = () => {
               </h1>
               
               <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                Plan and visualize beautiful poster layouts with our intuitive interior design tool. 
+                Plan and visualize beautiful poster layouts with my intuitive interior design tool. 
                 Transform your space with professional-looking arrangements.
               </p>
               
@@ -128,9 +128,7 @@ const Index = () => {
             <h2 className="text-3xl font-bold text-foreground mb-4">
               Ready to Transform Your Space?
             </h2>
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join thousands of users who have created stunning poster layouts with our planner
-            </p>
+           
             <Link 
               to="/wall-type"
               className="btn btn-primary btn-lg px-8 shadow-soft hover:scale-105 transition-transform"
