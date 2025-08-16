@@ -3,6 +3,7 @@ import { ArrowRight, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { WallTypeCard } from "@/components/WallTypeCard";
 import { StepIndicator } from "@/components/StepIndicator";
+import { Footer } from "@/components/Footer";
 import flatWallImage from "@/assets/flat-wall.jpg";
 import cornerWallImage from "@/assets/corner-wall.jpg";
 
@@ -27,6 +28,7 @@ export default function WallTypeSelection() {
 
   const handleContinue = () => {
     if (selectedWallType) {
+      localStorage.setItem("selectedWallType", selectedWallType);
       navigate("/poster-selection");
     }
   };
@@ -112,14 +114,7 @@ export default function WallTypeSelection() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card/30 mt-20">
-        <div className="container mx-auto px-6 py-8">
-          <div className="text-center text-sm text-muted-foreground">
-            <p>© 2024 Poster Layout Planner. Design your perfect space.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
