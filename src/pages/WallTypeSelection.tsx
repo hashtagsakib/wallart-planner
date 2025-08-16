@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { ArrowRight, Home } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { WallTypeCard } from "@/components/WallTypeCard";
 import { StepIndicator } from "@/components/StepIndicator";
 import flatWallImage from "@/assets/flat-wall.jpg";
 import cornerWallImage from "@/assets/corner-wall.jpg";
 
 export default function WallTypeSelection() {
+  const navigate = useNavigate();
   const [selectedWallType, setSelectedWallType] = useState<"flat" | "corner" | null>(null);
 
   const wallTypes = [
@@ -25,8 +27,7 @@ export default function WallTypeSelection() {
 
   const handleContinue = () => {
     if (selectedWallType) {
-      // For now, just show an alert - will be replaced with navigation later
-      alert(`Selected: ${selectedWallType} wall`);
+      navigate("/poster-selection");
     }
   };
 
