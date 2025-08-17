@@ -3,14 +3,19 @@ import { ArrowLeft, Home, RotateCcw, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/Footer";
+import Canvas3D from "@/components/Canvas3D";
+import html2canvas from "html2canvas";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Poster {
   id: string;
   x: number;
   y: number;
+  z: number;
   width: number;
   height: number;
   isDragging: boolean;
+  onWall: 'front' | 'side';
 }
 
 interface ConfigData {
@@ -24,10 +29,12 @@ interface ConfigData {
 export default function Canvas() {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   const [config, setConfig] = useState<ConfigData>({});
   const [posters, setPosters] = useState<Poster[]>([]);
   const [draggedPoster, setDraggedPoster] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isExporting, setIsExporting] = useState(false);
 
   // Canvas dimensions
   const canvasWidth = 800;
@@ -54,17 +61,20 @@ export default function Canvas() {
       const initialPosters: Poster[] = [];
       
       for (let i = 0; i < count; i++) {
-        // Arrange posters in a grid-like pattern initially
+        // Arrange posters in a 3D space initially
         const col = i % 3;
         const row = Math.floor(i / 3);
+        const onWall: 'front' | 'side' = i % 2 === 0 ? 'front' : 'side';
         
         initialPosters.push({
           id: `poster-${i}`,
-          x: 100 + col * (posterWidth + 50),
-          y: 100 + row * (posterHeight + 50),
+          x: -200 + col * (posterWidth + 50),
+          y: -100 + row * (posterHeight + 50),
+          z: onWall === 'front' ? -300 : 100,
           width: posterWidth,
           height: posterHeight,
-          isDragging: false
+          isDragging: false,
+          onWall
         });
       }
       
@@ -90,12 +100,17 @@ export default function Canvas() {
     elegant: { poster: "#505050", frame: "#303030" }
   };
 
-  const handleMouseDown = (e: React.MouseEvent, posterId: string) => {
-    e.preventDefault();
+  const handleMouseDown = (posterId: string) => {
     setDraggedPoster(posterId);
     setPosters(prev => prev.map(p => 
       p.id === posterId ? { ...p, isDragging: true } : p
     ));
+  };
+
+  const handleTouchStart = (posterId: string) => {
+    if (isMobile) {
+      handleMouseDown(posterId);
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -146,18 +161,44 @@ export default function Canvas() {
       for (let i = 0; i < count; i++) {
         const col = i % 3;
         const row = Math.floor(i / 3);
+        const onWall: 'front' | 'side' = i % 2 === 0 ? 'front' : 'side';
         
         resetPosters.push({
           id: `poster-${i}`,
-          x: 100 + col * (posterWidth + 50),
-          y: 100 + row * (posterHeight + 50),
+          x: -200 + col * (posterWidth + 50),
+          y: -100 + row * (posterHeight + 50),
+          z: onWall === 'front' ? -300 : 100,
           width: posterWidth,
           height: posterHeight,
-          isDragging: false
+          isDragging: false,
+          onWall
         });
       }
       
       setPosters(resetPosters);
+    }
+  };
+
+  const handleExportPNG = async () => {
+    if (!canvasRef.current) return;
+    
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(canvasRef.current, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+      });
+      
+      const link = document.createElement('a');
+      link.download = 'poster-layout-design.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -188,9 +229,14 @@ export default function Canvas() {
                 <RotateCcw className="w-4 h-4" />
                 <span>Reset</span>
               </Button>
-              <Button variant="outline" className="flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={handleExportPNG}
+                disabled={isExporting}
+                className="flex items-center space-x-2"
+              >
                 <Download className="w-4 h-4" />
-                <span>Export</span>
+                <span>{isExporting ? 'Exporting...' : 'Export PNG'}</span>
               </Button>
             </div>
           </div>
@@ -211,112 +257,17 @@ export default function Canvas() {
               </p>
             </div>
 
-            {/* Canvas */}
-            <div className="flex justify-center">
-              <div
-                ref={canvasRef}
-                className={`relative border-2 rounded-lg cursor-move select-none ${
-                  config.wallType === "corner" ? "border-l-4 border-t-4" : ""
-                }`}
-                style={{
-                  width: canvasWidth,
-                  height: canvasHeight,
-                  backgroundColor: wallColor,
-                  borderColor: "#333"
-                }}
-                onMouseMove={handleMouseMove}
+            {/* 3D Canvas */}
+            <div className="flex justify-center" ref={canvasRef}>
+              <Canvas3D
+                posters={posters}
+                wallColor={wallColor}
+                posterColor={theme.poster}
+                onPosterUpdate={(updater) => setPosters(updater)}
+                draggedPoster={draggedPoster}
+                onMouseDown={isMobile ? handleTouchStart : handleMouseDown}
                 onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-              >
-                {/* Corner indicator for corner walls */}
-                {config.wallType === "corner" && (
-                  <div className="absolute top-0 left-0 w-8 h-8 bg-gray-400 opacity-50" />
-                )}
-
-                {/* Posters */}
-                {posters.map((poster) => {
-                  const distances = calculateDistance(poster);
-                  
-                  return (
-                    <div key={poster.id}>
-                      {/* Poster */}
-                      <div
-                        className={`absolute border-2 cursor-move transition-shadow duration-200 ${
-                          poster.isDragging ? "shadow-glow scale-105" : "hover:shadow-elegant"
-                        }`}
-                        style={{
-                          left: poster.x,
-                          top: poster.y,
-                          width: poster.width,
-                          height: poster.height,
-                          backgroundColor: theme.poster,
-                          borderColor: theme.frame,
-                          zIndex: poster.isDragging ? 10 : 1
-                        }}
-                        onMouseDown={(e) => handleMouseDown(e, poster.id)}
-                      >
-                        {/* Poster content placeholder */}
-                        <div className="w-full h-full bg-gray-300 opacity-20 flex items-center justify-center text-xs text-gray-600">
-                          Poster
-                        </div>
-                      </div>
-
-                      {/* Distance indicators */}
-                      {poster.isDragging && (
-                        <>
-                          {/* Left distance */}
-                          <div
-                            className="absolute text-xs bg-primary text-primary-foreground px-2 py-1 rounded"
-                            style={{
-                              left: poster.x / 2 - 10,
-                              top: poster.y + poster.height / 2,
-                              zIndex: 20
-                            }}
-                          >
-                            {distances.left}cm
-                          </div>
-                          
-                          {/* Right distance */}
-                          <div
-                            className="absolute text-xs bg-primary text-primary-foreground px-2 py-1 rounded"
-                            style={{
-                              left: poster.x + poster.width + (canvasWidth - poster.x - poster.width) / 2 - 10,
-                              top: poster.y + poster.height / 2,
-                              zIndex: 20
-                            }}
-                          >
-                            {distances.right}cm
-                          </div>
-                          
-                          {/* Top distance */}
-                          <div
-                            className="absolute text-xs bg-primary text-primary-foreground px-2 py-1 rounded"
-                            style={{
-                              left: poster.x + poster.width / 2 - 10,
-                              top: poster.y / 2 - 10,
-                              zIndex: 20
-                            }}
-                          >
-                            {distances.top}cm
-                          </div>
-                          
-                          {/* Bottom distance */}
-                          <div
-                            className="absolute text-xs bg-primary text-primary-foreground px-2 py-1 rounded"
-                            style={{
-                              left: poster.x + poster.width / 2 - 10,
-                              top: poster.y + poster.height + (canvasHeight - poster.y - poster.height) / 2 - 10,
-                              zIndex: 20
-                            }}
-                          >
-                            {distances.bottom}cm
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              />
             </div>
 
             {/* Instructions */}

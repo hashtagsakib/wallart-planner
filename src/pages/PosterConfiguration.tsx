@@ -13,6 +13,8 @@ export default function PosterConfiguration() {
   const [posterSize, setPosterSize] = useState<string>("");
   const [wallColor, setWallColor] = useState<string>("");
   const [showWarning, setShowWarning] = useState(false);
+  const [customWidth, setCustomWidth] = useState<string>("");
+  const [customHeight, setCustomHeight] = useState<string>("");
 
   const wallColors = [
     { value: "white", label: "White", color: "#FFFFFF" },
@@ -32,6 +34,7 @@ export default function PosterConfiguration() {
     { value: "50x70", label: "50 x 70 cm" },
     { value: "60x80", label: "60 x 80 cm" },
     { value: "70x100", label: "70 x 100 cm" },
+    { value: "custom", label: "Custom Size" },
   ];
 
   const handleBack = () => {
@@ -43,11 +46,20 @@ export default function PosterConfiguration() {
       setShowWarning(true);
       return;
     }
+
+    if (posterSize === "custom" && (!customWidth || !customHeight)) {
+      setShowWarning(true);
+      return;
+    }
+
     setShowWarning(false);
+    
+    const finalSize = posterSize === "custom" ? `${customWidth}x${customHeight}` : posterSize;
+    
     // Store configuration in localStorage for the canvas page
     localStorage.setItem("posterConfig", JSON.stringify({
       count: posterCount,
-      size: posterSize,
+      size: finalSize,
       wallColor: wallColor
     }));
     navigate("/color-selection");
@@ -132,6 +144,44 @@ export default function PosterConfiguration() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Custom Size Inputs */}
+              {posterSize === "custom" && (
+                <div className="col-span-full">
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <Label htmlFor="custom-width" className="text-sm font-medium text-foreground">
+                        Width (cm)
+                      </Label>
+                      <input
+                        id="custom-width"
+                        type="number"
+                        value={customWidth}
+                        onChange={(e) => setCustomWidth(e.target.value)}
+                        className="w-full h-12 px-3 bg-background border border-border rounded-lg text-foreground mt-2"
+                        placeholder="Enter width"
+                        min="10"
+                        max="200"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="custom-height" className="text-sm font-medium text-foreground">
+                        Height (cm)
+                      </Label>
+                      <input
+                        id="custom-height"
+                        type="number"
+                        value={customHeight}
+                        onChange={(e) => setCustomHeight(e.target.value)}
+                        className="w-full h-12 px-3 bg-background border border-border rounded-lg text-foreground mt-2"
+                        placeholder="Enter height"
+                        min="10"
+                        max="200"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Wall Color */}
               <div className="space-y-3">
