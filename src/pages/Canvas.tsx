@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/Footer";
 import Canvas3D from "@/components/Canvas3D";
+import FlatCanvas from "@/components/FlatCanvas";
 import html2canvas from "html2canvas";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -185,18 +186,39 @@ export default function Canvas() {
     setIsExporting(true);
     try {
       const canvas = await html2canvas(canvasRef.current, {
-        backgroundColor: null,
+        backgroundColor: wallColor,
         scale: 2,
         useCORS: true,
         allowTaint: true,
+        ignoreElements: (element) => {
+          // Ignore any elements that might cause issues
+          return element.classList?.contains('no-export') || false;
+        },
+        logging: false,
+        removeContainer: true,
+        foreignObjectRendering: true
       });
       
       const link = document.createElement('a');
       link.download = 'poster-layout-design.png';
-      link.href = canvas.toDataURL();
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
     } catch (error) {
       console.error('Export failed:', error);
+      // Fallback: try without advanced options
+      try {
+        const simpleCanvas = await html2canvas(canvasRef.current, {
+          backgroundColor: wallColor,
+          scale: 1
+        });
+        const link = document.createElement('a');
+        link.download = 'poster-layout-design.png';
+        link.href = simpleCanvas.toDataURL('image/png', 1.0);
+        link.click();
+      } catch (fallbackError) {
+        console.error('Fallback export also failed:', fallbackError);
+        alert('Export failed. Please try again.');
+      }
     } finally {
       setIsExporting(false);
     }
@@ -257,17 +279,29 @@ export default function Canvas() {
               </p>
             </div>
 
-            {/* 3D Canvas */}
+            {/* Canvas - 3D for corner walls, 2D for flat walls */}
             <div className="flex justify-center" ref={canvasRef}>
-              <Canvas3D
-                posters={posters}
-                wallColor={wallColor}
-                posterColor={theme.poster}
-                onPosterUpdate={(updater) => setPosters(updater)}
-                draggedPoster={draggedPoster}
-                onMouseDown={isMobile ? handleTouchStart : handleMouseDown}
-                onMouseUp={handleMouseUp}
-              />
+              {config.wallType === 'corner' ? (
+                <Canvas3D
+                  posters={posters}
+                  wallColor={wallColor}
+                  posterColor={theme.poster}
+                  onPosterUpdate={(updater) => setPosters(updater)}
+                  draggedPoster={draggedPoster}
+                  onMouseDown={isMobile ? handleTouchStart : handleMouseDown}
+                  onMouseUp={handleMouseUp}
+                />
+              ) : (
+                <FlatCanvas
+                  posters={posters.filter(p => p.onWall === 'front')} // Only show front wall posters for flat canvas
+                  wallColor={wallColor}
+                  posterColor={theme.poster}
+                  onPosterUpdate={(updater) => setPosters(updater)}
+                  draggedPoster={draggedPoster}
+                  onMouseDown={isMobile ? handleTouchStart : handleMouseDown}
+                  onMouseUp={handleMouseUp}
+                />
+              )}
             </div>
 
             {/* Instructions */}

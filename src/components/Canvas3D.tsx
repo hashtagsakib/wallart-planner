@@ -192,12 +192,12 @@ function Scene({ posters, wallColor, posterColor, onPosterUpdate, draggedPoster,
       )}
 
       <OrbitControls 
-        enablePan={true}
-        enableZoom={true}
-        enableRotate={true}
+        enablePan={false}
+        enableZoom={false}
+        enableRotate={false}
         maxPolarAngle={Math.PI / 2}
-        minDistance={3}
-        maxDistance={15}
+        minDistance={8}
+        maxDistance={8}
       />
     </>
   );
