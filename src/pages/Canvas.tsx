@@ -185,35 +185,58 @@ export default function Canvas() {
     
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(canvasRef.current, {
-        backgroundColor: wallColor,
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        ignoreElements: (element) => {
-          // Ignore any elements that might cause issues
-          return element.classList?.contains('no-export') || false;
-        },
-        logging: false,
-        removeContainer: true,
-        foreignObjectRendering: true
-      });
-      
-      const link = document.createElement('a');
-      link.download = 'poster-layout-design.png';
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
-    } catch (error) {
-      console.error('Export failed:', error);
-      // Fallback: try without advanced options
-      try {
-        const simpleCanvas = await html2canvas(canvasRef.current, {
+      // For 3D canvases, we need to handle WebGL differently
+      if (config.wallType === 'corner') {
+        // Find the canvas element within the 3D component
+        const webglCanvas = canvasRef.current.querySelector('canvas');
+        if (webglCanvas) {
+          // Create a new canvas to combine WebGL content
+          const exportCanvas = document.createElement('canvas');
+          const ctx = exportCanvas.getContext('2d');
+          
+          exportCanvas.width = webglCanvas.width;
+          exportCanvas.height = webglCanvas.height;
+          
+          // Draw the WebGL canvas content
+          ctx.drawImage(webglCanvas, 0, 0);
+          
+          // Download the image
+          const link = document.createElement('a');
+          link.download = 'poster-layout-design.png';
+          link.href = exportCanvas.toDataURL('image/png', 1.0);
+          link.click();
+        } else {
+          throw new Error('Canvas element not found');
+        }
+      } else {
+        // For 2D flat canvas, use html2canvas
+        const canvas = await html2canvas(canvasRef.current, {
           backgroundColor: wallColor,
-          scale: 1
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false
         });
+        
         const link = document.createElement('a');
         link.download = 'poster-layout-design.png';
-        link.href = simpleCanvas.toDataURL('image/png', 1.0);
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      // Universal fallback using html2canvas
+      try {
+        const canvas = await html2canvas(canvasRef.current, {
+          backgroundColor: wallColor,
+          scale: 1,
+          useCORS: true,
+          allowTaint: true
+        });
+        
+        const link = document.createElement('a');
+        link.download = 'poster-layout-design.png';
+        link.href = canvas.toDataURL('image/png', 1.0);
         link.click();
       } catch (fallbackError) {
         console.error('Fallback export also failed:', fallbackError);

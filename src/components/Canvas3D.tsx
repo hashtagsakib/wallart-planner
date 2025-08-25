@@ -195,6 +195,7 @@ function Scene({ posters, wallColor, posterColor, onPosterUpdate, draggedPoster,
         enablePan={false}
         enableZoom={false}
         enableRotate={false}
+        enableDamping={false}
         maxPolarAngle={Math.PI / 2}
         minDistance={8}
         maxDistance={8}
